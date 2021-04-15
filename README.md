@@ -15,11 +15,14 @@ Table of Contents
 4. Plasmid detection
 
 ## Usage
-Before applying this tool, run [Prokka](https://github.com/tseemann/prokka). 
 
 As input, this script takes a path to the directory of Prokka output.
 
 Example: python ropro.py -i input_directory -o ouput_directory -ra
+
+## Requirements
+* Prokka output. Before applying this tool, run [Prokka](https://github.com/tseemann/prokka). 
+* samtools 1.5+
 
 
 ## Basic Assembly Stats
@@ -42,11 +45,11 @@ The percent hypothetical is an important statistic for determining assembly qual
 
 | Statistic | Description |
 | --------- | ----------- |
-| CDS | x |
-| hypothetical protein | x |
-| putative protein | x |
-| perc_hypothetical | x |
-| perc_putative | x |
+| CDS | Number of coding sequences identified |
+| hypothetical protein | Number of CDS classified as hypothetical |
+| putative protein | Number of CDS classified as putative |
+| perc_hypothetical | % of CDS classified as hypothetical |
+| perc_putative | % of CDS classfied as putative |
 
 ## tRNA Breakdown
 The number of tRNAs in an assembly can be indicative of assembly completeness. There are 64 codons that encode for 20 AAs (amino acids). In theory, an organism should have at least one tRNA per codon; however, we can see from the Prokka annotations that this is not the case-- each codon may correspond to 0 or multiple tRNA. This could be for two reasons. (1) tRNAs are degenerate and one tNRA can be used to recognize multiple codons and (2) a knowledge gap/lack of resolution.
