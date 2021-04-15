@@ -46,6 +46,15 @@ The percent hypothetical is an important statistic for determining assembly qual
 | perc_hypothetical | x |
 | perc_putative | x |
 
+## tRNA Breakdown
+The number of tRNAs in an assembly can be indicative of assembly completeness. There are 64 codons that encode for 20 AAs (amino acids). In theory, an organism should have at least one tRNA per codon; however, we can see from the Prokka annotations that this is not the case-- each codon may correspond to 0 or multiple tRNA. This could be for two reasons. (1) tRNAs are degenerate and one tNRA can be used to recognize multiple codons and (2) a knowledge gap/lack of resolution.
+
+Due to the potential limitaions of reporting the number of tRNAs by codon, the report file also contains a table of the number of tRNAs by AA which seems to be a better indicator of assembly completeness. If an assembly contains fewer than 20 AAs, this could indicate that the assembly is missing content. If an assembly contains multiple tRNAs for every AA, the assembly may contain duplicated content or multiple genomes. A quick check can be done (by looking at the 'tRNA AA range' line) to make sure that each AA is represented by at least one tRNA; however, note that it is not uncommon for an assembly to contain multiple tRNAs for some AAs. 
+
+## Number of identifier genes
+The 16S and rpoB genes are commonly used for bacterial species identification because these genes are ubiquitous to bacteria and are species specific. An isolate may contain multiple copies of the 16S gene but bacteria typically only contain one copy of the rpoB gene. Multiple copies of the rpoB gene could indicate sequence duplication or 
+Manually finding and extracting these sequences from the `.ffn` file then running a BLAST alignment for each sequence can be labor and time intensive. 
+
 ## TODO
 
 * Pull data into summary table for multiple samples
