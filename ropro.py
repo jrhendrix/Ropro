@@ -84,9 +84,11 @@ def configure(args):
 
 
 def check_files(args):
-	''' This function checks for the files that will be used throughout program
-	If the necessary files are now found, try to run Prokka
-		If Prokka cannot be run, exit '''
+	'''
+	Function checks for necessary files
+	Necessary files include Prokka generated .txt, .tsv, and .ffn
+	If one or more file(s) not found, exit
+	'''
 
 	LOG.info('LOOKING FOR INPUT FILES')
 	# Make a list of files available in input directory
@@ -115,7 +117,12 @@ def check_files(args):
 	return fList, check
 
 def report_results(results, section_name):
-	''' Report results '''
+	''' 
+	Report results 
+	
+	Input: Function takes a dictionary of statistics and formats the output
+	Output: Function appends to the report text file
+	'''
 
 	try:
 		r = open(REPORT.path, 'a')
@@ -132,11 +139,12 @@ def report_results(results, section_name):
 
 
 def get_stats(in_file):
-	''' Extracts values from first text file'''
+	''' Extracts values from Prokka text file'''
 	# As written, this function only considers the first encountered txt file.
 	# TODO: handle multiple text files?
 
 	LOG.info('FETCHING BASIC STATISTICS')
+	
 	# Extract stats from txt file
 	stats = {}
 	try:
@@ -158,9 +166,12 @@ def get_stats(in_file):
 
 
 def calc_functions(in_file):
-	''' Get genes by function. Calculate the percent of CDS that are annotated as hypothetical protein'''
-	# TODO: Calculate percent putative
-	# As written, this function only considers the first encountered tsv file
+	''' 
+	This function calculates CDS total and percentage by function
+	
+	Input: Prokka generated .tsv file
+	Output: A dictionary of functional annotations and occurances
+	'''
 
 	LOG.info('CALCULATING PERCENT BY FUNCTION')
 
@@ -171,7 +182,6 @@ def calc_functions(in_file):
 
 		# LOOP THROUGH ANNOTATION SEARCH TERMS
 		for i in annotations:
-			#print('\n')
 			command1 = ['grep', i, f.path]
 			command2 = ['wc', '-l']
 
@@ -190,7 +200,7 @@ def calc_functions(in_file):
 
 
 	except:
-		LOG.error('... ERROR. Could not calculate percent hypothetical protien. Return NA')
+		LOG.error('... ERROR. Could not calculate percent hypothetical protien. Return NA and continue')
 		entry['error'] = 'Could not extract genes by function.'
 		entry['percent_hypothetical'] = 'NA'
 		return entry
@@ -199,6 +209,7 @@ def calc_functions(in_file):
 	# CALCULATE PERCENT
 	if entry['CDS'] == 0:
 		entry['percent_hypothetical'] = 'NA'
+
 	else:
 		# calculate % of CDS that are hypothetical
 		per_hyp = round((entry['hypothetical protein']/entry['CDS'])*100, 2)
@@ -216,7 +227,12 @@ def calc_functions(in_file):
 
 
 def get_sequences(in_file, keyphrases, exact=True):
-	''' Extract sequences from a FA file '''
+	''' 
+	Extract sequences from a FA file 
+
+	Input: Prokka generated .ffn file
+	Output: Dictionary of sequences
+	'''
 
 	LOG.info('EXTRACTING SEQUENCES OF INTEREST')
 
@@ -293,7 +309,12 @@ def get_sequences(in_file, keyphrases, exact=True):
 
 
 def export_sequences(args, entry, outName):
-	''' Exports sequences from dictionary into individual files for BLAST search'''
+	''' 
+	Function writes extracted sequences to individual files
+
+	Input: Directory of sequence entries
+	Output: An .fa file for each sequence. Compatible with blastn
+	'''
 
 	LOG.info('EXPORTING SEQUENCES')
 
@@ -328,7 +349,12 @@ def export_sequences(args, entry, outName):
 
 
 def align_sequences(args, inDir):
-	''' Run BLAST alignment and return top hits '''
+	''' 
+	Function runs blastn and reports results
+
+	Input: Directory of .fa files. Each file contains one sequence to align
+	Output: Top BLAST alignment hits
+	'''
 
 	LOG.info('RUNNING BLAST ALIGNMENTS')
 
@@ -362,7 +388,12 @@ def align_sequences(args, inDir):
 
 
 def count_tRNA(in_file):
-	''' Counts the frequency of tRNA by AA and codon '''
+	''' 
+	Counts the frequency of tRNA by AA and codon
+
+	Input: Prokka generated .tsv file
+	Output: Dictionaries reporting number of occurances of tRNAs by AA and codon
+	'''
 
 	LOG.info('EXTRACTING tRNA COUNTS')
 
