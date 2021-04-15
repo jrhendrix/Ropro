@@ -26,14 +26,16 @@ Example: python ropro.py -i input_directory -o ouput_directory -ra
 Displays the statistics presented in the Prokka `.tsv` file and will depend on the run parameters used to run Prokka. For example, non-coding RNAs (ncRNAs) will only be reported if Prokka was run with the `--rfam` parameter.
 | Statistic | Description |
 | --------- | ----------- |
-| contigs | x |
-| bases | length of assembly, including all contigs |
-| gene | x |
-| CDS | x |
-| rRNA | x |
-| tRNA | x |
-| misc_RNA | x |
-| tmRNA | x |
+| contigs | Number of contigs or segments in the assembly |
+| bases | Length of assembly, including all contigs |
+| gene | Number of open reading frames identified |
+| CDS | Number of coding sequences identified |
+| rRNA | Number of ribosomal RNAs identified |
+| tRNA | Number of transfer RNAs identified |
+| misc_RNA | Number of miscellaneous RNAs identified |
+| tmRNA | Number of transfer-messenger RNAs identified |
+
+Note that the CDS and RNA classes are subsets of the genes class.
 
 ## Annotatios by function
 The percent hypothetical is an important statistic for determining assembly quality. Due to limitations in current knowlege, there are many bacterial CDS that have not been annotated. Thus, an assembly where 40-60% of CDS are hypothetical proteins may still be a high quality assembly. However, if the percent hypothetical exceeds 90%, the quality/usability should be questioned.
@@ -51,13 +53,29 @@ The number of tRNAs in an assembly can be indicative of assembly completeness. T
 
 Due to the potential limitaions of reporting the number of tRNAs by codon, the report file also contains a table of the number of tRNAs by AA which seems to be a better indicator of assembly completeness. If an assembly contains fewer than 20 AAs, this could indicate that the assembly is missing content. If an assembly contains multiple tRNAs for every AA, the assembly may contain duplicated content or multiple genomes. A quick check can be done (by looking at the 'tRNA AA range' line) to make sure that each AA is represented by at least one tRNA; however, note that it is not uncommon for an assembly to contain multiple tRNAs for some AAs. 
 
-## Number of identifier genes
-The 16S and rpoB genes are commonly used for bacterial species identification because these genes are ubiquitous to bacteria and are species specific. An isolate may contain multiple copies of the 16S gene but bacteria typically only contain one copy of the rpoB gene. Multiple copies of the rpoB gene could indicate sequence duplication or 
-Manually finding and extracting these sequences from the `.ffn` file then running a BLAST alignment for each sequence can be labor and time intensive. 
+## Number of Identifier Genes
+The 16S and rpoB genes are commonly used for bacterial species identification because these genes are ubiquitous to bacteria and are species specific. An isolate may contain multiple copies of the 16S gene but bacteria typically only contain one copy of the rpoB gene. Multiple copies of the rpoB gene could indicate sequence duplications or multiple genomes.
+
+## BLAST Alignments
+Manually finding and extracting these sequences from the `.ffn` file then running a BLAST alignment for each sequence can be labor and time intensive. Thus, ropro extracts the sequence of each identifier gene and aligns the sequence to the BLASTn database using blastn. Returned are the top 5 BLAST hits that have at least 90% sequence identity and at least 95% coverage of the query sequence. Each hit will have the following field information: 
+
+| Field | Description |
+| ----- | ----------- |
+| qseqid | query sequence ID |
+| stitle | subject title |
+| pident | % identity |
+| qcovs | % query coverage per subject|
+| qcovhsp | % query coverage per hsp |
+| length | length of alignment |
+| evalue | e value |
+
+The entirety of the BLAST results are returned to the user. This is because a single query might have multiple close matches to related species in the BLAST database. Sometimes distinguishing between these relults are better left to human the human eye.
+
+The sequences for each identifier gene are retained in the output directory in case additional alignments are needed. 
 
 ## TODO
 
-* Pull data into summary table for multiple samples
+* Pull data into summary tsv for multiple samples
 
 ## References
 Seemann T. Prokka: rapid prokaryotic genome annotation. Bioin- formatics 2014;30:2068–2069.
