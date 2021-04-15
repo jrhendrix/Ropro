@@ -35,8 +35,16 @@ Displays the statistics presented in the Prokka `.tsv` file and will depend on t
 | misc_RNA | x |
 | tmRNA | x |
 
-## Calculate the percentage of CDS that are hypothetical proteins
+## Annotatios by function
 The percent hypothetical is an important statistic for determining assembly quality. Due to limitations in current knowlege, there are many bacterial CDS that have not been annotated. Thus, an assembly where 40-60% of CDS are hypothetical proteins may still be a high quality assembly. However, if the percent hypothetical exceeds 90%, the quality/usability should be questioned.
+
+| Statistic | Description |
+| --------- | ----------- |
+| CDS | x |
+| hypothetical protein | x |
+| putative protein | x |
+| perc_hypothetical | x |
+| perc_putative | x |
 
 ## TODO
 
