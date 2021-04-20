@@ -2,7 +2,7 @@
 This repository contains the scripts for generating a report on Prokka data. This tool is to be used for gathering and reporting data, not for evaluating the results.
 
 ## Introduction
-Prokka is a bioinformatics tool for annotating bacterial, archaeal, and vial genome assemblies. Output files are generated that contain a lot of information, including the annotation, sequence, and assembly statistics data (Seemann, 2014). The information can be time consuming to mine when there are many samples, but the standard output format of the Prokka software makes it a good candidate for an automated mining system.
+Prokka is a bioinformatics tool for annotating bacterial, archaeal, and vial genome assemblies. Output files are generated that contain a lot of information, including the annotation list, annotation sequences (nucleic acid and amino acid), and assembly statistics (Seemann, 2014). The information can be time consuming to gather when there are many samples, but the standard output format of the Prokka software makes it a good candidate for an automated mining system.
 
 
 ## Table of Contents
@@ -18,15 +18,17 @@ Table of Contents
 
 As input, this script takes a path to the directory of Prokka output.
 
-Example: python ropro.py -i input_directory -o ouput_directory -ra
+Example: python ropro.py -ra -i input_directory -o ouput_directory
 
 ## Requirements
 * Prokka output. Before applying this tool, run [Prokka](https://github.com/tseemann/prokka). 
 * samtools 1.5+
+* blastn 2.10.1+
 
 
 ## Basic Assembly Stats
-Displays the statistics presented in the Prokka `.tsv` file and will depend on the run parameters used to run Prokka. For example, non-coding RNAs (ncRNAs) will only be reported if Prokka was run with the `--rfam` parameter.
+Displays the statistics presented in the Prokka `.tsv` file. Note, the statistics reported in this section are entirely dependendent upon the Prokka run parameters. For example, non-coding RNAs (ncRNAs) will only be reported if Prokka was run with the `--rfam` parameter.
+
 | Statistic | Description |
 | --------- | ----------- |
 | contigs | Number of contigs or segments in the assembly |
@@ -41,7 +43,7 @@ Displays the statistics presented in the Prokka `.tsv` file and will depend on t
 Note that the CDS and RNA classes are subsets of the genes class.
 
 ## Annotatios by function
-The percent hypothetical is an important statistic for determining assembly quality. Due to limitations in current knowlege, there are many bacterial CDS that have not been annotated. Thus, an assembly where 40-60% of CDS are hypothetical proteins may still be a high quality assembly. However, if the percent hypothetical exceeds 90%, the quality/usability should be questioned.
+The percent hypothetical is an important statistic for determining assembly quality. Due to limitations in current knowlege, there are many bacterial CDS that have not been annotated. Thus, an assembly where 40-60% of CDS are hypothetical proteins may still be a high quality assembly. However, if the percent hypothetical exceeds 90%, the quality/usability should be considered.
 
 | Statistic | Description |
 | --------- | ----------- |
