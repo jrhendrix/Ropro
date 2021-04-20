@@ -54,9 +54,52 @@ The percent hypothetical is an important statistic for determining assembly qual
 | perc_putative | % of CDS classfied as putative |
 
 ## tRNA Breakdown
-The number of tRNAs in an assembly can be indicative of assembly completeness. There are 64 codons that encode for 20 AAs (amino acids) and three stop signals. The potential mathematical range of tRNAs in one organism is 20-62. The minimum of 20 ensures that each of the amino acids are encoded by at least one tRNA. Conversely, a genome could have up 62 tRNAs that each recognize a different anticodon (Land, 2015). One group found that oranisms in the study had an average of 55 tRNAs and a maximum of 284 (Land, 2015). In a study of 30,000 prokaryotic genome sequences, 
+The number of tRNAs in an assembly can be indicative of assembly completeness and quality (Land, 2014).
+In order to express a gene and make a protein, DNA is transcribed into mRNA (messenger RNA) which will contain the reverse compliment sequence where Ts have been replaced with Us). The mRNA is then translated into protein (the Central Dogma of Genetics). 
 
-In theory, an organism should have at least one tRNA per codon; however, we can see from the Prokka annotations that this is not the case-- each codon may correspond to 0 or multiple tRNA. This could be for two reasons. (1) tRNAs are degenerate and one tNRA can be used to recognize multiple codons and (2) a knowledge gap/lack of resolution.
+During translation, the sequence is read in units of three nucleotides, called codons by tRNAs (transfer RNA). The tRNA contains an anticodon sequence on the base which binds to its respective codon on the mRNA. The anticodon is the reverse compliment of the codon which is the reverse compliment of the DNA strand; thus, the tRNA anticodon sequence matches the original DNA seqence, cool huh? The tRNA recognizes its sequence on one end and carries its AA (amino acid) molecule on the other in order to deliver the molecule to the growing AA strand. Thus, the genetic sequence is read and the AA molecule is assembled in the correct order.
+
+Each position can contain one of the four nucleic acids (A, C, G, T/U), giving rise to 64 possible codons (`4^3`). Three of these codons signal for termination of AA production while the rest signal for the addition of one of the 20 AAs. Becasue there are only 20 AAs, one AA could be delivered by multiple tRNAs (where each tRNA recognizes a unique codon). But the number of codons/tRNAs is not the same for each AA. For example, Methionine is only delivered by one tRNA. In contrast, Arginine can be delivered by 6 different tRNAs.
+
+According to Land et. a. 2015, the mathematical range of tRNAs in one organism is 20-62. The minimum of 20 ensures that the organism has at least one way of getting each AA. The maximum of 62 reflects the number of unique anticodons (Land, 2015). NOTE: I propose a different range: 21-64.  The minimum of 21 includes the 20 AAs and one tRNA to stop the AA elongation process. The maximum of 64 reflects the total number of anticodons because the three stop tRNAs recognize different codons. To be efficient, a genome would in theory need to have a number of tRNAs somewhere in this range.
+
+However, biology is not exactly efficient. Land et. al. 2014 examined 30,000 prokaryotic genome sequences available in GenBank. They found a wide range in the number of tRNAs per completed and draft genomes.
+
+Table: % of genomes with n tRNAs per genome
+| Num. tRNAs | Complete | Draft |
+| ---------- | -------- | ----- |
+| 0-40 | 23 | 27 |
+| 41-50 | 27 | 23 |
+| 51-60 | 21 | 19 |
+| 61-70 | 11 | 13 |
+| 71-100 | 15 | 16 |
+| > 100 | 3 | 1 |
+| ----- | -- | -- |
+| Min | 7 | 0 |
+| Max | 173 | 284 |
+| Mean | 55 | 53 |
+| N | 2,672 | 12,530 |
+| SD | 19 | 20 |
+
+
+Of 2,672 completed genomes, 23% had fewer than 40 tRNAs, 
+
+
+They found that many genomes contain a maximum of 280 tRNA genes in a single genome (_Escherichias coli_ HVH 33 (4-2174936))- evidently this genome contains multiple genes for several tRNAs. 
+
+Genomes often contain multiple copies of the same tRNA.
+The most anticodons represented were 47.
+
+
+It is also important to remember the limitations of tRNA detection.
+
+They found that 40% of published genomes were missing at least one tRNA, likely due to fragmentation
+They consider a genome with fewer than 10 AA to be of poor quality.
+
+
+
+
+however, we can see from the Prokka annotations that this is not the case-- each codon may correspond to 0 or multiple tRNA. This could be for two reasons. (1) tRNAs are degenerate and one tNRA can be used to recognize multiple codons and (2) a knowledge gap/lack of resolution.
 
 Due to the potential limitaions of reporting the number of tRNAs by codon, the report file also contains a table of the number of tRNAs by AA which seems to be a better indicator of assembly completeness. If an assembly contains fewer than 20 AAs, this could indicate that the assembly is missing content. If an assembly contains multiple tRNAs for every AA, the assembly may contain duplicated content or multiple genomes. A quick check can be done (by looking at the 'tRNA AA range' line) to make sure that each AA is represented by at least one tRNA; however, note that it is not uncommon for an assembly to contain multiple tRNAs for some AAs. 
 
