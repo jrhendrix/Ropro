@@ -90,7 +90,7 @@ The sequences for each identifier gene are retained in the output directory in c
 * Pull data into summary tsv for multiple samples
 
 ## References (APA)
-Land, M. L., Hyatt, D., Jun, S. R., Kora, G. H., Hauser, L. J., Lukjancenko, O., & Ussery, D. W. (2014). Quality scores for 32,000 genomes. Standards in genomic sciences, 9(1), 1-10.
-Seemann, T. (2014). Prokka: rapid prokaryotic genome annotation. Bioinformatics, 30(14), 2068-2069.
+* Land, M. L., Hyatt, D., Jun, S. R., Kora, G. H., Hauser, L. J., Lukjancenko, O., & Ussery, D. W. (2014). Quality scores for 32,000 genomes. Standards in genomic sciences, 9(1), 1-10.
+* Seemann, T. (2014). Prokka: rapid prokaryotic genome annotation. Bioinformatics, 30(14), 2068-2069.
 
 
