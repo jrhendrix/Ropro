@@ -55,19 +55,13 @@ The percent hypothetical is an important statistic for determining assembly qual
 | perc_putative | % of CDS classfied as putative |
 
 ## tRNA Breakdown
-The number of tRNAs in an assembly can be indicative of assembly completeness and quality. A high quality assembly will have at least one (1 to many) tRNA for each of the 20 AAs (amino acids) (Land, 2014). An assembly with fewer than 20 AAs may be missing genetic content or the annotations may be split accross fragments. Genomes often contain many tRNA genes for each AA, but an excessive number may indicate erronous duplicated content or multiple genomes.
-
-Land et. al examined the number and distribution of tRNAs in 15,000 completed and draft assemblies on GenBank. They found that completed assembies had an average of 55 total tRNAs that represented on average 37 anticodons. The maximum number of unique anticodons identified per genome were 46 in the completed genome set and 47 in the draft genome set. The unrepresented anticodons were overwhelmingly those that started with A (the codon ends with U or T). They use the number of represented AAs (rather than anticodons) in their assessment of genome completion. A genome with fewer than 10 represented AAs was considered to be poor quality (Land, 2014). See supplementary.md for additional information
-
-A quick check of assembly completeness can be done (by looking at the 'tRNA AA range' line) to make sure that each AA is represented by at least one tRNA; however, note that it is not uncommon for an assembly to contain multiple tRNAs for some AAs. If all AAs have 2 or more corresponding tRNAs, consider checking your sample for multiple genomes.
+The number of tRNAs in an assembly can be indicative of assembly completeness and quality. A high quality assembly will have at least one (1 to many) tRNA for each of the 20 AAs (amino acids) (Land, 2014). A quick check of assembly completeness can be done (by looking at the 'tRNA AA range' line) to make sure that each AA is represented by at least one tRNA; however, note that it is not uncommon for an assembly to contain multiple tRNAs for some AAs. If all AAs have 2 or more corresponding tRNAs, consider checking your sample for multiple genomes. See supplementary.md for additional information.
 
 A table of tRNAs by codon is also provided in the report file. It is common the number of tNRAs to be unevenly distributed across the codons. This could be due to reasons that are biological (codon usage bias) or computational (limited resolution for tRNA detection).
 
 
-
-
 ## Number of Identifier Genes
-The 16S rRNA and rpoB genes are commonly used for bacterial species identification because these genes are ubiquitous to bacteria and are species specific. An isolate may contain multiple copies of the 16S gene but bacteria typically only contain one copy of the rpoB gene. Multiple copies of the rpoB gene could indicate sequence duplications or multiple genomes.
+The 16S rRNA and rpoB genes are commonly used for bacterial species identification because these genes are ubiquitous in bacteria and are somewhat species specific. An isolate may contain multiple copies of the 16S gene but bacteria typically only contain one copy of the rpoB gene. Multiple copies of the rpoB gene could indicate sequence duplications or multiple genomes.
 
 ## BLAST Alignments
 Manually finding and extracting these sequences from the `.ffn` file then running a BLAST alignment for each sequence can be labor and time intensive. Thus, ropro extracts the sequence of each identifier gene and aligns the sequence to the BLASTn database using blastn. Returned are the top 5 BLAST hits that have at least 90% sequence identity and at least 95% coverage of the query sequence. Each hit will have the following field information: 
