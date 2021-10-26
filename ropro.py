@@ -563,7 +563,9 @@ def main(program):
 
 
 	# EXTRACT IDENTIFIER SEQUENCES
-	identifiers = {'16S': ['16S ribosomal RNA'], 'rpoB': ['DNA-directed RNA polymerase subunit beta']}
+	identifiers = {'16S': ['16S ribosomal RNA'], 
+		'rpoB': ['DNA-directed RNA polymerase subunit beta'], 
+		'dnaA': ['Chromosomal replication initiator protein DnaA']}
 	ident_seqs, ident_counts = get_sequences(fList['ffn'], identifiers, True)
 	LOG.info('REPORTING NUMBER OF IDENTIFIER GENES')
 	report_results(ident_counts, 'NUMBER OF IDENTIFIER GENES')
