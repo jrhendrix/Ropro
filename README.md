@@ -19,7 +19,7 @@ Table of Contents
 
 As input, this script takes a path to the directory of Prokka output.
 
-Example: python ropro.py -ra -i input_directory -o ouput_directory
+Example: `python ropro.py -ra -i input_directory -o ouput_directory`
 
 ## Requirements
 * Prokka output. Before applying this tool, run [Prokka](https://github.com/tseemann/prokka). 
