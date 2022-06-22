@@ -1,5 +1,5 @@
 # Report On PROkka
-This repository contains the scripts for generating a report on [Prokka](https://github.com/tseemann/prokka) data. This tool is to be used for gathering and reporting data, not for running Prokka or evaluating the results.
+Add on to the bacterial annotation tool Prokka [Prokka](https://github.com/tseemann/prokka). Ropro gathers and computes metrics on Prokka output and consolidates information in one convenient results file. Tool does not run Prokka or comment on the significance of results.
 
 ## Introduction
 Prokka is a bioinformatics tool for annotating bacterial, archaeal, and vial genome assemblies. Output files are generated that contain a lot of information, including the annotation list, annotation sequences (nucleic acid and amino acid), and assembly statistics (Seemann, 2014). The information can be time consuming to gather when there are many samples, but the standard output format of the Prokka software makes it a good candidate for an automated mining system.
