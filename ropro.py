@@ -130,20 +130,6 @@ class File:
 		f.close()
 
 
-def load_module(module):
-	if type(module) == list:
-		for mod in module:
-			(output, error) = subprocess.Popen(
-				['/usr/local/Modules/default/bin/modulecmd', 'python', 'load', f'{mod}'],
-				stdout=subprocess.PIPE).communicate()
-			exec(output)
-	else:
-		(output, error) = subprocess.Popen(
-			['/usr/local/Modules/default/bin/modulecmd', 'python', 'load', f'{module}'],
-			stdout=subprocess.PIPE).communicate()
-		exec(output)
-
-
 def configure(args):
 	''' Configure base directory, log file, and report file '''
 	global BASEDIR, INDIR, LOG, REPORT, TEXT
@@ -631,7 +617,6 @@ def main(program):
 	parent_parser.add_argument('-b', '--blastn_path', help='Path to blastn', required=True)
 	parent_parser.add_argument('-debug', default=False, action='store_true', help='Debug mode; enable debugging output')
 	parent_parser.add_argument('-i', '--input_directory', help='Path to input directory')
-	parent_parser.add_argument('-mod', '--module_load', default=False, action='store_true', help='Enable module load function')
 	parent_parser.add_argument('-o', default="ropro", help='Prefix of output directory', type=str)
 	parent_parser.add_argument('-p', default=cwd, help='Path to output', type=str)
 	parent_parser.add_argument('-ra', '--run_alignment', default=False, action='store_true', help='Run BLAST alignment on sequences')
@@ -641,10 +626,6 @@ def main(program):
 	# TODO: Add parser to run Prokka, requires fasta file
 
 	args = parent_parser.parse_args()
-
-	# LOAD MODULES
-	if args.module_load == True:
-		load_module(['samtools/1.5'])
 
 	# SET UP
 	configure(args)
