@@ -59,6 +59,15 @@ The number of tRNAs in an assembly can be indicative of assembly completeness an
 
 A table of tRNAs by codon is also provided in the report file. It is common the number of tNRAs to be unevenly distributed across the codons. This could be due to reasons that are biological (codon usage bias) or computational (limited resolution for tRNA detection).
 
+Example Codon Table
+|tRNAs by AA: | Ala:3 | Arg:4 | Asn:2 | Asp:1 | Cys:2 |
+|              | Gln:2 | Glu:2 | Gly:3 | His:1 | Ile:1 |
+|               | Leu:5 | Lys:2 | Met:3 | Phe:1 | Pro:3 |
+|               | Ser:4 | Thr:3 | Trp:1 | Tyr:1 | Val:3 |
+
+Most importantly, Ropro displays the range of AA that are represented
+```tRNA AA range: 1-5```
+
 
 ## Number of Identifier Genes
 The 16S rRNA and rpoB genes are commonly used for bacterial species identification because these genes are ubiquitous in bacteria and are somewhat species specific. An isolate may contain multiple copies of the 16S gene but bacteria typically only contain one copy of the rpoB gene. Multiple copies of the rpoB gene could indicate sequence duplications or multiple genomes.
