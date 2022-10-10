@@ -19,11 +19,11 @@ Table of Contents
 
 As input, this script takes a path to the directory of Prokka output.
 
-Example: `python ropro.py -ra -i input_directory -o ouput_directory`
+Example: `python ropro.py -b path/to/blastn -i input_directory -o ouput_directory`
 
 ## Requirements
 * Prokka output. Before applying this tool, run [Prokka](https://github.com/tseemann/prokka). 
-* samtools 1.5+
+* pysam
 * blastn 2.10.1+
 * python 3.7+
 
