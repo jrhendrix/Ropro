@@ -1,24 +1,16 @@
+# __main__.py
+
 # IMPORT FROM PYTHON STANDARD LIBRARY
-import ast
 import argparse
-import datetime
 import glob
 import logging
-#import math
-#import operator
 import os
+import pysam # pip install pysam
 import shutil
 import subprocess
 import sys
-import time
 
 from os import path
-
-# IMPORT FROM PROJECT LIBRARY
-#from handler import Dir, File
-
-# INITIATE LOGS
-LOG = logging.getLogger('log_file')
 
 
 class Dir:
@@ -83,8 +75,7 @@ class Dir:
 
 	def __repr__(self):
 		return self.path
-	
-	
+		
 
 class File:
 	""" Base class for all file-types """
@@ -163,9 +154,9 @@ def configure(args):
 
 
 	# INITIATE COMMON TEXT
-	TEXT = {}
-	TEXT['sectionBreak'] = "\n\n-------------------------------------------------------------\n"
-	TEXT['breakSpace'] = "\n\n"
+	#TEXT = {}
+	#TEXT['sectionBreak'] = "\n\n-------------------------------------------------------------\n"
+	#TEXT['breakSpace'] = "\n\n"
 
 	# INITIATE REPORT FILE
 	outFile = '_'.join(('report', args.o))
@@ -179,87 +170,39 @@ def configure(args):
 
 	LOG.info(f'Generated report file: {REPORT.filename}\n\n')
 
-
-def check_files(args):
-	'''
-	Function checks for necessary files
-	Necessary files include Prokka generated .txt, .tsv, and .ffn
-	If one or more file(s) not found, exit
-	'''
-
-	LOG.info('LOOKING FOR INPUT FILES')
-	# Make a list of files available in input directory
-	fList = {}
-	in_f = INDIR.files
-	for f in in_f:
-		#n = f.filename
-		n = f.path
-		suffix = f.extension
-		if suffix not in fList:
-			fList[suffix] = []
-			fList[suffix].append(n)
-		else:
-			fList[suffix].append(n)
-		
-
-	suf = ['txt', 'tsv', 'ffn']
-	check = True
-	for s in suf:
-		if s not in fList:
-			check = False
-			LOG.critical(f'... ERROR. File with suffix {s} was not found.')
-
-	LOG.info('... DONE')
-	# Return file list and check status
-	return fList, check
-
-def report_results(results, section_name):
+def align_sequences(indir, path):
 	''' 
-	Report results 
-	
-	Input: Function takes a dictionary of statistics and formats the output
-	Output: Function appends to the report text file
+	Function runs blastn and reports results
+
+	Input: Directory of .fa files. Each file contains one sequence to align
+	Output: Top BLAST alignment hits
 	'''
 
-	try:
-		r = open(REPORT.path, 'a')
-		entry = ''.join((TEXT['sectionBreak'], section_name))
-		r.write(f'{entry}\n\n')
-		for key in results:
-			entry = ': '.join((key, str(results[key])))
-			r.write(f'{entry}\n')
-		r.close()
-		LOG.info('... DONE')
+	in_f = indir.files
+	path = args.blastn_path
+	outfmt = '7 qseqid stitle pident qcovs qcovhsp length evalue'
+	entry = {}
 
-	except IOError:
-		LOG.error(f'... ERROR. Could not report {section_name}. Skipping.')
+	num_seqs = str(len(in_f))
+	LOG.info(f'... Number of sequences that will be aligned: {num_seqs}')
 
+	# ALIGN SEQUENCES IN PROVIDED DIR
+	count = 0
+	for file in in_f:
+		count = count + 1
+		LOG.info(f'... ... Aligning sequence {count}')
 
-def get_stats(in_file):
-	''' Extracts values from Prokka text file'''
-	# As written, this function only considers the first encountered txt file.
-	# TODO: handle multiple text files?
+		seqName = file.file_prefix
+		seqID = seqName.split('_')[0]
+		# call BLAST remotely
+		command = [path, '-remote', '-db', 'nr', '-query', file.path, '-outfmt', outfmt, '-perc_identity', '90', '-qcov_hsp_perc', '95', '-max_target_seqs', '5']
+		process = subprocess.run(command, capture_output=True)
+		result = process.stdout.decode("utf-8")
+		result = ''.join(('\n', result))
 
-	LOG.info('FETCHING BASIC STATISTICS')
-	
-	# Extract stats from txt file
-	stats = {}
-	try:
-		f = open(in_file[0], 'r')
-		for line in f:
-			if ': ' not in line:
-				continue
-			(key, val) = line.split(': ')
-			val = val.replace("\n", "")
-			stats[str(key)] = val
-		f.close()
-	except IOError:
-		LOG.critical('... FAILED. Could not open txt file. EXIT')
+		entry[seqName] = result
 
-	LOG.info('... DONE')
-
-	return stats
-
+	return entry, False
 
 
 def calc_functions(in_file):
@@ -269,8 +212,6 @@ def calc_functions(in_file):
 	Input: Prokka generated .tsv file
 	Output: A dictionary of functional annotations and occurances
 	'''
-
-	LOG.info('CALCULATING PERCENT BY FUNCTION')
 
 	annotations = ['CDS', 'hypothetical protein', 'putative protein']
 	entry = {}
@@ -295,12 +236,10 @@ def calc_functions(in_file):
 
 			entry[i] = num
 
-
 	except:
-		LOG.error('... ERROR. Could not calculate percent hypothetical protien. Return NA and continue')
 		entry['error'] = 'Could not extract genes by function.'
 		entry['percent_hypothetical'] = 'NA'
-		return entry
+		return entry, True
 
 
 	# CALCULATE PERCENT
@@ -319,169 +258,46 @@ def calc_functions(in_file):
 		entry['perc_putative'] = record
 
 
-	LOG.info('... DONE')
-	return entry
+	return entry, False
 
 
-def get_sequences(in_file, keyphrases, exact=True):
-	''' 
-	Extract sequences from a FA file 
-
-	Input: Prokka generated .ffn file
-	Output: Dictionary of sequences
+def check_files(indir):
+	'''
+	Function checks for necessary files
+	Necessary files include Prokka generated .txt, .tsv, and .ffn
+	If one or more file(s) not found, exit
 	'''
 
-	LOG.info('EXTRACTING SEQUENCES OF INTEREST')
+	# Make a list of files available in input directory
+	fList = {}
+	in_f = indir.files
 
-	seqID = []
-	entry = {}
-	counts = {}
+	# Check if directory is empty
+	if in_f is None:
+		return {}, False
 
-	# INITIATE SEQUENCE DICTIONARY
-	for key in keyphrases:
-		if key not in entry:
-			entry[key] = []
-			counts[key] = 'NA'
+	# Check files
+	for f in in_f:
+		#n = f.filename
+		n = f.path
+		suffix = f.extension
+		if suffix not in fList:
+			fList[suffix] = []
+			fList[suffix].append(n)
+		else:
+			fList[suffix].append(n)
+		
 
-		# remove duplicate lookup values
-		keyphrases[key] = list(dict.fromkeys(keyphrases[key]))	# treats list as dictionary
+	suf = ['txt', 'tsv', 'ffn']
+	check = True
+	for s in suf:
+		if s not in fList:
+			check = False
+			print('failed check')
+			#LOG.critical(f'... ERROR. File with suffix {s} was not found.')
 
-	# READ INPUT FILE
-	try:
-		f = File(in_file[0])
-
-		# LOOP THROUGH GENE GROUP
-		for key in keyphrases:
-			# LOOP THROUGH SEARCH PHRASES FOR GROUP
-			for k in keyphrases[key]:
-				# get entries containing search phrases
-				command1 = ['grep', k, f.path]
-				process1 = subprocess.Popen(command1, shell=False, stdout=subprocess.PIPE)
-				result = process1.stdout.readlines()
-				process1.stdout.close()
-				process1.wait()
-
-				# if no result, continue
-				if len(result) < 1:
-					continue
-
-				# extract sequence ID
-				for seqID in result:
-					seqID = seqID.decode("utf-8")
-					seqID1 = seqID.split()[0]
-					seqID2 = seqID1.replace('>', '')
-					
-					seqName = seqID.replace(seqID1, '').replace('\n', '').lstrip()
-
-					# require an exact match
-					if exact == True:
-						if seqName != k:
-							continue
-
-					# get sequence from ID
-					command2 = ['samtools', 'faidx', f.path, seqID2]
-					process2 = subprocess.run(command2, capture_output=True)
-					
-					# format sequence result
-					seq = process2.stdout.decode("utf-8")
-					seq = seq.replace(seqID1, '')
-					seq = seq.replace('\n', '')
-
-					# add result to entry dictionary
-					record = [seqID2, seq]
-					entry[key].append(record)
-
-		# COUNT NUMBER OF HITS
-		for key in entry:
-			counts[key] = str(len(entry[key]))
-
-		LOG.info('... DONE')
-	
-	except:
-		LOG.error('... ERROR. Could not extract sequences. Skipping')
-
-
-	return entry, counts
-
-
-
-def export_sequences(args, entry, outName):
-	''' 
-	Function writes extracted sequences to individual files
-
-	Input: Directory of sequence entries
-	Output: An .fa file for each sequence. Compatible with blastn
-	'''
-
-	LOG.info('EXPORTING SEQUENCES')
-
-	# CREATE OUTPUT DIRECTORY
-	outDirName = ''.join(('seqs_', outName))
-	outDir = BASEDIR.make_subdir(outDirName)
-
-	# LOOP THROUGH GENE GROUPS
-	for key in entry:
-		# LOOP THROUGH SEQUENCE IDENTIFIERS
-		for i in entry[key]:
-
-			outFileName = '_'.join((i[0], key))
-			outFileName = '.'.join((outFileName, 'fa'))
-			outFile = '/'.join((outDir.path, outFileName))
-
-			try:
-				f = open(outFile, 'w')
-				seqID = ''.join(('>', i[0]))
-				out = '\n'.join((seqID, i[1]))
-				f.write(out)
-				f.close()
-
-			except:
-				LOG.error(f'... ERROR. Could not export sequence {i[0]}. Skipping')
-				continue
-
-	LOG.info('... DONE')
-
-	return outDir
-
-
-
-def align_sequences(args, inDir):
-	''' 
-	Function runs blastn and reports results
-
-	Input: Directory of .fa files. Each file contains one sequence to align
-	Output: Top BLAST alignment hits
-	'''
-
-	LOG.info('RUNNING BLAST ALIGNMENTS')
-
-	in_f = inDir.files
-	path = args.blastn_path
-	outfmt = '7 qseqid stitle pident qcovs qcovhsp length evalue'
-	entry = {}
-
-	num_seqs = str(len(in_f))
-	LOG.info(f'... Number of sequences that will be aligned: {num_seqs}')
-
-	# ALIGN SEQUENCES IN PROVIDED DIR
-	count = 0
-	for file in in_f:
-		count = count + 1
-		LOG.info(f'... ... Aligning sequence {count}')
-
-		seqName = file.file_prefix
-		seqID = seqName.split('_')[0]
-		# call BLAST remotely
-		command = [path, '-remote', '-db', 'nr', '-query', file.path, '-outfmt', outfmt, '-perc_identity', '90', '-qcov_hsp_perc', '95', '-max_target_seqs', '5']
-		process = subprocess.run(command, capture_output=True)
-		result = process.stdout.decode("utf-8")
-		result = ''.join(('\n', result))
-
-		entry[seqName] = result
-
-	LOG.info('... DONE')
-	return entry
-
+	# Return file list and check status
+	return fList, check
 
 
 def count_tRNA(in_file):
@@ -491,8 +307,6 @@ def count_tRNA(in_file):
 	Input: Prokka generated .tsv file
 	Output: Dictionaries reporting number of occurances of tRNAs by AA and codon
 	'''
-
-	LOG.info('EXTRACTING tRNA COUNTS')
 
 	# INITIATE tRNA DICTIONARIES
 	aa_dict = {
@@ -532,8 +346,8 @@ def count_tRNA(in_file):
 		result = process.stdout.decode("utf-8").split('\n')
 
 	except:
-		LOG.error('... ERROR. Could not open tsv file')
-		return entry
+		error = '... ERROR. Could not open tsv file'
+		return entry, error
 
 	try:
 		# EXTRACT AA AND CODON SEQUENCES
@@ -555,8 +369,8 @@ def count_tRNA(in_file):
 				continue
 
 	except:
-		LOG.error('... ERROR. Cound not extract amino acid and codon sequences.')
-		return entry
+		error = '... ERROR. Cound not extract amino acid and codon sequences.'
+		return entry, error
 		
 
 	try:
@@ -598,92 +412,284 @@ def count_tRNA(in_file):
 		entry['tRNAs by codon'] = sc
 
 	except:
-		LOG.error('... ERROR. Cound not format output.')
-		return entry
+		error = '... ERROR. Cound not format output.'
+		return entry, error
+
+	return entry, None
 
 
-	LOG.info('... DONE')
-	return entry
+def export_sequences(outdir, entry, outName):
+	''' 
+	Function writes extracted sequences to individual files
+
+	Input: Directory of sequence entries
+	Output: An .fa file for each sequence. Compatible with blastn
+	'''
+
+	# CREATE OUTPUT DIRECTORY
+	outDirName = ''.join(('seqs_', outName))
+	outDir = outdir.make_subdir(outDirName)
+
+	failed_seqs = []
+
+	# LOOP THROUGH GENE GROUPS
+	for key in entry:
+		# LOOP THROUGH SEQUENCE IDENTIFIERS
+		for i in entry[key]:
+
+			outFileName = '_'.join((i[0], key))
+			outFileName = '.'.join((outFileName, 'fa'))
+			outFile = '/'.join((outDir.path, outFileName))
+
+			try:
+				f = open(outFile, 'w')
+				seqID = ''.join(('>', i[0]))
+				out = '\n'.join((seqID, i[1]))
+				f.write(out)
+				f.close()
+
+			except:
+				failed_seqs.append(i[0])
+				continue
+
+	if len(failed_seqs) < 1:
+		error = None
+	else:
+		fails = ','.join((failed_seqs))
+		msg = ('... ERROR. Could not export sequence', fails, '. Skipping these files')
+		error = ' '.join(msg)
 
 
+	return outDir, error
 
-def main(program):
-	''' The main worker function to dictate processes '''
 
-	cwd = os.getcwd()
+def get_sequences(in_file, keyphrases, exact=True):
+	''' 
+	Extract sequences from a FA file 
 
-	# PARSER : ROOT
-	parent_parser = argparse.ArgumentParser(prog='reportOnProkka', add_help=False)
-	parent_parser.add_argument('-b', '--blastn_path', help='Path to blastn', required=True)
-	parent_parser.add_argument('-debug', default=False, action='store_true', help='Debug mode; enable debugging output')
-	parent_parser.add_argument('-i', '--input_directory', help='Path to input directory')
-	parent_parser.add_argument('-o', default="ropro", help='Prefix of output directory', type=str)
-	parent_parser.add_argument('-p', default=cwd, help='Path to output', type=str)
-	parent_parser.add_argument('-ra', '--run_alignment', default=False, action='store_true', help='Run BLAST alignment on sequences')
-	parent_parser.add_argument('--version', action='version', version='%(prog)s 0.0.0')
-	subparsers = parent_parser.add_subparsers(help='sub-command help')
+	Input: Prokka generated .ffn file
+	Output: Dictionary of sequences
+	'''
 
-	# TODO: Add parser to run Prokka, requires fasta file
+	seqID = []
+	entry = {}
+	counts = {}
 
-	args = parent_parser.parse_args()
+	# INITIATE SEQUENCE DICTIONARY
+	for key in keyphrases:
+		if key not in entry:
+			entry[key] = []
+			counts[key] = 'NA'
+
+		# remove duplicate lookup values
+		keyphrases[key] = list(dict.fromkeys(keyphrases[key]))	# treats list as dictionary
+
+	# READ INPUT FILE
+	try:
+		f = File(in_file[0])
+
+		# LOOP THROUGH GENE GROUP
+		for key in keyphrases:
+			# LOOP THROUGH SEARCH PHRASES FOR GROUP
+			for k in keyphrases[key]:
+				# Find entries containing search phrases
+				command1 = ['grep', k, f.path]
+				process1 = subprocess.Popen(command1, shell=False, stdout=subprocess.PIPE)
+				result = process1.stdout.readlines()
+				process1.stdout.close()
+				process1.wait()
+
+				# if no result, continue
+				if len(result) < 1:
+					continue
+
+				# extract sequence ID
+				for seqID in result:
+					seqID = seqID.decode("utf-8")
+					seqID1 = seqID.split()[0]
+					seqID2 = seqID1.replace('>', '')
+					
+					seqName = seqID.replace(seqID1, '').replace('\n', '').lstrip()
+
+					# require an exact match
+					if exact == True:
+						if seqName != k:
+							continue
+
+					fa = pysam.FastaFile(f.path)
+					seq = fa.fetch(seqID2)
+
+					# add result to entry dictionary
+					record = [seqID2, seq]
+					entry[key].append(record)
+
+		# COUNT NUMBER OF HITS
+		for key in entry:
+			counts[key] = str(len(entry[key]))
+
+	except:
+		error = '... ERROR. Could not extract sequences. Exit'
+		return entry, counts, error
+
+	return entry, counts, None
+
+def get_stats(in_file):
+	''' Extracts values from Prokka text file'''
+	# As written, this function only considers the first encountered txt file.
+	# TODO: handle multiple text files?
+
+	#LOG.info('FETCHING BASIC STATISTICS')
+	
+	# Extract stats from txt file
+	stats = {}
+	f = open(in_file[0], 'r')
+	for line in f:
+		if ': ' not in line:
+			continue
+		(key, val) = line.split(': ')
+		val = val.replace("\n", "")
+		stats[str(key)] = val
+	f.close()
+
+	return stats
+
+def report_results(rfile, results, section_name):
+	''' 
+	Report results 
+	
+	Input: Function takes a dictionary of statistics and formats the output
+	Output: Function appends to the report text file
+	'''
+
+	# INITIATE COMMON TEXT
+	sectionBreak = "\n\n-------------------------------------------------------------\n"
+	#breakSpace = "\n\n"
+
+
+	try:
+		r = open(rfile, 'a')
+		entry = ''.join((sectionBreak, section_name))
+		r.write(f'{entry}\n\n')
+		for key in results:
+			entry = ': '.join((key, str(results[key])))
+			r.write(f'{entry}\n')
+		r.close()
+		return True
+
+	except IOError:
+		return False
+
+
+def main(args):
 
 	# SET UP
 	configure(args)
-	fList, check = check_files(args)
-	if check != True:
+
+	# CHECK INPUT FOR NECESSARY FILES
+	task = 'LOOKING FOR INPUT FILES'
+	LOG.info(f'{task}...')
+	fList, check = check_files(INDIR)
+	if check:
+		LOG.info('... DONE')
+	else:
 		LOG.info('At least one required file could not be located.')
-		LOG.info('Please rerun Prokka or use the run_prokka subprogram')
 		exit()
 
+
 	# GET BASIC ASSEMBLY STATS
-	stats = get_stats(fList['txt'])
-	LOG.info('REPORTING BASIC ASSEMBLY STATISTICS')
-	report_results(stats, 'BASIC ASSEMBLY STATISTICS')
+	task = 'FETCHING BASIC ASSEMBLY STATISTICS'
+	LOG.info(f'{task}...')
+	try:
+		stats = get_stats(fList['txt'])
+		LOG.info('... DONE')
+	except IOError:
+		LOG.critical(f'... FAILED {task}. Check input text file. EXIT')
+		# Report
+		topic = 'BASIC ASSEMBLY STATISTICS'
+		LOG.info(f'REPORTING {topic}...')
+		if report_results(REPORT.path, stats, topic):
+			LOG.info('... DONE')
+		else:
+			LOG.error(f'... ERROR. Could not report {topic}. Skipping.')
 
 
 	# CALCULATE THE PERCENT HYPOTHETICAL
-	per_hyp = calc_functions(fList['tsv'])
-	LOG.info('REPORTING PERCENT BY FUNCTION')
-	report_results(per_hyp, 'ANNOTATIONS BY FUNCTION')
+	task = 'CALCULATING PERCENT BY FUNCTION'
+	LOG.info(f'{task}...')
+	per_hyp, error = calc_functions(fList['tsv'])
+	if error:
+		LOG.error(f'... ERROR. Failed {task}. Percent by function will be NA. Skipping.')
+	else:
+		LOG.info('... DONE')
+		# Report
+		topic = 'ANNOTATIONS BY FUNCTION'
+		LOG.info(f'REPORTING {topic}...')
+		if report_results(REPORT.path, per_hyp, topic):
+			LOG.info('... DONE')
+		else:
+			LOG.error(f'... ERROR. Could not report {topic}. Skipping.')
 
 
 	# COUNT tRNAs
-	tRNA_counts = count_tRNA(fList['tsv'])
-	LOG.info('REPORTING tRNA COUNTS')
-	report_results(tRNA_counts, 'tRNA BREAKDOWN')
+	task = 'EXTRACTING tRNA COUNTS'
+	LOG.info(f'{task}...')
+	tRNA_counts, error = count_tRNA(fList['tsv'])
+	if error:
+		LOG.info(f'{error} Skipping.')
+	else:
+		LOG.info('... DONE')
+		# Report
+		topic = 'tRNA BREAKDOWN'
+		LOG.info(f'REPORTING {topic}...')
+		if report_results(REPORT.path, tRNA_counts, topic):
+			LOG.info('... DONE')
+		else:
+			LOG.error(f'... ERROR. Could not report {topic}. Skipping.')
 
 
 	# EXTRACT IDENTIFIER SEQUENCES
 	identifiers = {'16S': ['16S ribosomal RNA'], 
 		'rpoB': ['DNA-directed RNA polymerase subunit beta'], 
 		'dnaA': ['Chromosomal replication initiator protein DnaA']}
-	ident_seqs, ident_counts = get_sequences(fList['ffn'], identifiers, True)
-	LOG.info('REPORTING NUMBER OF IDENTIFIER GENES')
-	report_results(ident_counts, 'NUMBER OF IDENTIFIER GENES')
+	task = 'EXTRACTING SEQUENCES OF INTEREST'
+	LOG.info(f'{task}...')
+	ident_seqs, ident_counts, error = get_sequences(fList['ffn'], identifiers, True)
+	if error:
+		LOG.critical(f'{error}')
+		return
+	LOG.info('... DONE')
+	# Report
+	topic = 'NUMBER OF IDENTIFIER GENES'
+	LOG.info(f'REPORTING {topic}...')
+	if report_results(REPORT.path, ident_counts, topic):
+		LOG.info('... DONE')
+	else:
+		LOG.error(f'... ERROR. Could not report {topic}. Skipping.')
 
 
 	# EXPORT SEQUENCES
-	seq_dir = export_sequences(args, ident_seqs, 'species_identifiers')
+	task = 'EXPORTING SEQUENCES'
+	LOG.info(f'{task}...')
+	seq_dir, error = export_sequences(BASEDIR, ident_seqs, 'species_identifiers')
+	if error:
+		LOG.info(f'{error}')
+	LOG.info('... DONE')
+
 
 	# RUN BLAST ALIGNMENT
-	if args.run_alignment == True:
-		alignments = align_sequences(args, seq_dir)
-		LOG.info('REPORTING BLAST ALIGNMENTS')
-		report_results(alignments, 'BLAST ALIGNMENTS')
-
-
-
-
-if __name__== "__main__":
-	start_time = time.time()
-	main(sys.argv[1])
-	LOG.info('\n\tCOMPLETE')
-	LOG.info('\n\tEXECUTION TIME: {} seconds'.format(time.time() - start_time))
-
-
-
-
-
+	if args.blastn_path is None:	# Do not run alignment
+		return
+	task = 'RUNNING BLAST ALIGNMENTS'
+	LOG.info(f'{task}...')
+	alignments, error = align_sequences(seq_dir, args.blastn_path)
+	LOG.info('... DONE')
+	# Report
+	topic = 'BLAST ALIGNMENTS'
+	LOG.info(f'REPORTING {topic}...')
+	if report_results(REPORT.path, alignments, topic):
+		LOG.info('... DONE')
+	else:
+		LOG.error(f'... ERROR. Could not report {topic}. Skipping.')
 
 
 
@@ -691,3 +697,24 @@ if __name__== "__main__":
 
 
 
+if __name__ == "__main__":
+
+	# INITIATE LOGS
+	LOG = logging.getLogger('log_file')
+
+	cwd = os.getcwd()
+
+	# PARSER : ROOT
+	parent_parser = argparse.ArgumentParser(prog='reportOnProkka', add_help=False)
+	parent_parser.add_argument('-b', '--blastn_path', default=None, help='Path to blastn')
+	parent_parser.add_argument('-debug', default=False, action='store_true', help='Debug mode; enable debugging output')
+	parent_parser.add_argument('-i', '--input_directory', help='Path to input directory')
+	parent_parser.add_argument('-o', default="out", help='Prefix of output directory', type=str)
+	parent_parser.add_argument('-p', default=cwd, help='Path to output', type=str)
+	parent_parser.add_argument('-ra', '--run_alignment', default=False, action='store_true', help='Run BLAST alignment on sequences')
+	parent_parser.add_argument('--version', action='version', version='%(prog)s 0.0.0')
+	subparsers = parent_parser.add_subparsers(help='sub-command help')
+
+	args = parent_parser.parse_args()
+
+	main(args)
