@@ -12,5 +12,5 @@ On this page can be found an executable version of Roprokka. This version assume
 
 ### Usage
 ```
-python ropro.py -i path/to/prokka/output -o output_directory
+python ropro.py -i path/to/prokka/output -p path/to/output -o savename
 ```
